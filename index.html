@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monkey Detection</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background-color: #121212;
+            color: #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        header {
+            width: 50%;
+            padding: 20px;
+            background-color: #1e88e5;
+            text-align: center;
+            color: white;
+            font-size: 24px;
+            border-radius: 25px;
+        }
+
+        #main-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #1f1f1f;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            margin-top: 20px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        #webcam-container {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+        }
+
+        #webcam-container canvas {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+        }
+
+        #result-container {
+            font-size: 1.5em;
+            margin-top: 20px;
+            font-weight: bold;
+            color: #bb86fc;
+        }
+
+        #start-btn {
+            padding: 12px 24px;
+            font-size: 18px;
+            background-color: #bb86fc;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        #start-btn:hover {
+            background-color: #985bf7;
+        }
+
+        #start-btn:disabled {
+            background-color: #7a52b3;
+            cursor: not-allowed;
+        }
+
+        footer {
+            width: 50%;
+            padding: 15px;
+            background-color: #1e88e5;
+            text-align: center;
+            color: white;
+            margin-top: 20px;
+            border-radius: 25px;
+        }
+
+        @media (max-width: 600px) {
+            #main-container {
+                max-width: 90%;
+                padding: 15px;
+            }
+
+            #start-btn {
+                padding: 10px 20px;
+                font-size: 16px;
+            }
+
+            #result-container {
+                font-size: 1.3em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>Monkey Detection System</header>
+
+<div id="main-container">
+    <h2>Real-time Video Feed</h2>
+    <button type="button" id="start-btn" onclick="init()">Start</button>
+    <div id="webcam-container"></div>
+    <div id="result-container"></div>
+</div>
+
+<footer>Project by Kinsuk Singh, Sourabh Bindal, Imtiyazuddin, Vijay Kumar</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+<script type="text/javascript">
+    const URL = "https://teachablemachine.withgoogle.com/models/45ZYZksAO/";
+
+    let model, webcam, resultContainer, maxPredictions;
+
+    async function init() {
+        document.getElementById("start-btn").disabled = true;
+
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
+
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+
+        const flip = true; 
+        webcam = new tmImage.Webcam(300, 300, flip);
+        await webcam.setup();
+        await webcam.play();
+        window.requestAnimationFrame(loop);
+
+        document.getElementById("webcam-container").appendChild(webcam.canvas);
+        resultContainer = document.getElementById("result-container");
+    }
+
+    async function loop() {
+        webcam.update();
+        await predict();
+        window.requestAnimationFrame(loop);
+    }
+
+    async function predict() {
+        const prediction = await model.predict(webcam.canvas);
+
+        const class1Prob = prediction[0].probability;
+        const class2Prob = prediction[1].probability;
+
+        let result = (class1Prob > class2Prob) ? "Monkey" : "NotMonkey";
+        resultContainer.innerHTML = `Detected: ${result}`;
+    }
+</script>
+
+</body>
+</html>
